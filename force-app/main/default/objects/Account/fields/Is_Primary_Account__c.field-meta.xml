@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Is_Primary_Account__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description>Checked automatically on the top (primary) account of an agency group, i.e. an account with no Parent Account, including accounts created by lead conversion. Unchecked on branch (child) accounts. Maintained by AccountBranchCountTrigger.</description>
+    <label>Is Primary Account</label>
+    <trackFeedHistory>false</trackFeedHistory>
+    <type>Checkbox</type>
+</CustomField>

@@ -1,0 +1,174 @@
+<apex:page standardController="Opportunity" extensions="GoodLettrContractController"
+           renderAs="pdf" applyHtmlTag="false" applyBodyTag="false" showHeader="false"
+           sidebar="false" standardStylesheets="false">
+<!--
+  GoodLettr contract template. The commercial terms below are a starting draft:
+  have them reviewed by GoodLettr's legal team before sending contracts to agencies.
+  Company details come from Custom Labels GoodLettr_Legal_Name / _Registered_Address / _Company_Number.
+-->
+<html>
+<head>
+<style type="text/css">
+    @page {
+        size: A4;
+        margin: 22mm 18mm 22mm 18mm;
+        @bottom-left { content: "{!legalName} - Contract {!contractReference}"; font-family: sans-serif; font-size: 8pt; color: #6b7280; }
+        @bottom-right { content: "Page " counter(page) " of " counter(pages); font-family: sans-serif; font-size: 8pt; color: #6b7280; }
+    }
+    body { font-family: sans-serif; font-size: 9.5pt; color: #1f2937; line-height: 1.4; }
+    h1 { font-size: 18pt; color: #1e3a8a; margin: 0 0 2px 0; }
+    h2 { font-size: 11.5pt; color: #1e3a8a; border-bottom: 1px solid #c7d2fe; padding-bottom: 3px; margin: 18px 0 8px 0; }
+    .muted { color: #6b7280; }
+    .brand { font-size: 22pt; font-weight: bold; color: #1e3a8a; }
+    table { width: 100%; border-collapse: collapse; }
+    .meta td { padding: 2px 0; vertical-align: top; }
+    .parties td { width: 50%; vertical-align: top; padding: 8px 10px; border: 1px solid #e5e7eb; }
+    .schedule th { background: #1e3a8a; color: #ffffff; font-size: 8.5pt; text-align: left; padding: 6px; }
+    .schedule td { border-bottom: 1px solid #e5e7eb; padding: 6px; font-size: 9pt; vertical-align: top; }
+    .num { text-align: right; }
+    .total td { font-weight: bold; border-top: 2px solid #1e3a8a; border-bottom: none; }
+    ol.terms { padding-left: 16px; margin: 0; }
+    ol.terms li { margin-bottom: 6px; }
+    .sign td { width: 50%; vertical-align: top; padding: 10px 10px 0 0; }
+    .line { border-bottom: 1px solid #9ca3af; height: 26px; margin-bottom: 2px; }
+    .label { font-size: 8pt; color: #6b7280; margin-bottom: 8px; }
+    .avoid-break { page-break-inside: avoid; }
+</style>
+</head>
+<body>
+
+<table>
+    <tr>
+        <td><div class="brand">GoodLettr</div><div class="muted">Tenancy Management Software</div></td>
+        <td style="text-align:right;" class="muted">
+            Contract ref: <strong>{!contractReference}</strong><br/>
+            Date:&nbsp;<apex:outputText value="{0,date,dd MMMM yyyy}"><apex:param value="{!contractDate}"/></apex:outputText>
+        </td>
+    </tr>
+</table>
+
+<h1 style="margin-top:18px;">Software Services Agreement</h1>
+<div class="muted">Order Form and Commercial Terms</div>
+
+<h2>1. Parties</h2>
+<table class="parties">
+    <tr>
+        <td>
+            <strong>Supplier</strong><br/>
+            {!legalName}<br/>
+            {!registeredAddress}<br/>
+            Company no. {!companyNumber}
+        </td>
+        <td>
+            <strong>Customer (the "Agency")</strong><br/>
+            {!opp.Account.Name}<br/>
+            <apex:outputText rendered="{!NOT(ISBLANK(opp.Account.BillingStreet))}">{!opp.Account.BillingStreet}<br/></apex:outputText>
+            <apex:outputText rendered="{!NOT(ISBLANK(opp.Account.BillingCity))}">{!opp.Account.BillingCity}&nbsp;{!opp.Account.BillingPostalCode}<br/></apex:outputText>
+            <apex:outputText rendered="{!NOT(ISBLANK(opp.Account.BillingCountry))}">{!opp.Account.BillingCountry}<br/></apex:outputText>
+            <apex:outputText rendered="{!NOT(ISNULL(agencyContact))}">Attention: {!agencyContact.Name}<br/>{!agencyContact.Email}</apex:outputText>
+        </td>
+    </tr>
+</table>
+
+<h2>2. Order details</h2>
+<table class="meta">
+    <tr><td style="width:40%;" class="muted">Opportunity</td><td>{!opp.Name}</td></tr>
+    <tr><td class="muted">Expected commencement date</td>
+        <td><apex:outputText value="{0,date,dd MMMM yyyy}"><apex:param value="{!opp.CloseDate}"/></apex:outputText></td></tr>
+    <tr><td class="muted">Number of branches</td>
+        <td><apex:outputText value="{0,number,#,##0}" rendered="{!NOT(ISNULL(opp.Account.Number_of_Branches__c))}"><apex:param value="{!opp.Account.Number_of_Branches__c}"/></apex:outputText><apex:outputText value="Not stated" rendered="{!ISNULL(opp.Account.Number_of_Branches__c)}"/></td></tr>
+    <tr><td class="muted">Estimated number of tenancies</td>
+        <td><apex:outputText value="{0,number,#,##0}" rendered="{!NOT(ISNULL(opp.Number_of_Tenancies__c))}"><apex:param value="{!opp.Number_of_Tenancies__c}"/></apex:outputText><apex:outputText value="Not stated" rendered="{!ISNULL(opp.Number_of_Tenancies__c)}"/></td></tr>
+    <tr><td class="muted">Initial term</td><td>12 months from the commencement date</td></tr>
+</table>
+
+<h2>3. Schedule of charges</h2>
+<apex:outputPanel rendered="{!hasLines}" layout="none">
+<table class="schedule">
+    <tr>
+        <th style="width:28%;">Service</th>
+        <th>Charge type</th>
+        <th>Billing</th>
+        <th class="num">Tenancies</th>
+        <th class="num">Rate / tenancy / month</th>
+        <th class="num">Discount</th>
+        <th class="num">Charge per billing period</th>
+    </tr>
+    <apex:repeat value="{!lines}" var="li">
+    <tr>
+        <td><strong>{!li.Product2.Name}</strong></td>
+        <td>{!BLANKVALUE(li.Product2.Charge_Type__c, 'Recurring')}</td>
+        <td>{!BLANKVALUE(li.Billing_Frequency__c, 'Monthly')}</td>
+        <td class="num"><apex:outputText value="{0,number,#,##0}"><apex:param value="{!li.Quantity}"/></apex:outputText></td>
+        <td class="num"><apex:outputText value="£{0,number,#,##0.00}"><apex:param value="{!li.ListPrice}"/></apex:outputText></td>
+        <td class="num"><apex:outputText value="{0,number,0.##}%" rendered="{!NOT(ISNULL(li.Discount_Percent__c))}"><apex:param value="{!li.Discount_Percent__c}"/></apex:outputText><apex:outputText value="-" rendered="{!ISNULL(li.Discount_Percent__c)}"/></td>
+        <td class="num"><apex:outputText value="£{0,number,#,##0.00}"><apex:param value="{!li.TotalPrice}"/></apex:outputText></td>
+    </tr>
+    </apex:repeat>
+    <tr class="total">
+        <td colspan="6">Estimated total per billing period (excluding VAT)</td>
+        <td class="num"><apex:outputText value="£{0,number,#,##0.00}"><apex:param value="{!totalPerPeriod}"/></apex:outputText></td>
+    </tr>
+</table>
+<p class="muted" style="font-size:8.5pt;">
+    Charges shown are estimates based on the number of tenancies stated above. Usage charges are invoiced on the
+    actual number of tenancies managed through the software in each billing period (see clause 4.2).
+</p>
+</apex:outputPanel>
+<apex:outputPanel rendered="{!NOT(hasLines)}" layout="none">
+    <p><em>No services have been added to this order yet.</em></p>
+</apex:outputPanel>
+
+<div class="avoid-break">
+<h2>4. Commercial terms</h2>
+<ol class="terms">
+    <li><strong>Services.</strong> GoodLettr will provide the Agency, and each of its branches, with access to the
+        GoodLettr Tenancy Management Software as a hosted service, together with standard support and updates.</li>
+    <li><strong>Usage-based charges.</strong> The software is charged per tenancy. The charge for each billing period is the
+        number of tenancies managed through the software during that period, multiplied by the rate per tenancy per month
+        in the Schedule of Charges and by the number of months in the billing period, less any agreed discount.</li>
+    <li><strong>Billing frequency.</strong> Charges are invoiced in arrears at the end of each billing period, at the
+        billing frequency shown in the Schedule of Charges (monthly, quarterly or annually).</li>
+    <li><strong>Payment terms.</strong> Invoices are payable within 30 days of the invoice date. All charges are
+        exclusive of VAT and any other applicable taxes, which will be added at the prevailing rate.</li>
+    <li><strong>Discounts.</strong> Any discount shown in the Schedule of Charges applies for the initial term only,
+        unless GoodLettr agrees otherwise in writing.</li>
+    <li><strong>Term and renewal.</strong> This agreement starts on the commencement date and continues for the initial
+        term. It then renews automatically for successive 12-month periods unless either party gives at least
+        60 days' written notice before the end of the current term.</li>
+    <li><strong>Price changes.</strong> GoodLettr may change the rate per tenancy with effect from any renewal date by
+        giving at least 60 days' written notice.</li>
+    <li><strong>Late payment.</strong> If an invoice remains unpaid 14 days after written notice of non-payment,
+        GoodLettr may suspend access to the software until payment is received.</li>
+    <li><strong>Data protection.</strong> Each party will comply with applicable data protection law, including UK GDPR.
+        GoodLettr processes tenant and landlord personal data on the Agency's behalf as a processor.</li>
+    <li><strong>Termination.</strong> Either party may terminate this agreement immediately by written notice if the other
+        party commits a material breach that is not remedied within 30 days of being notified of it.</li>
+    <li><strong>Governing law.</strong> This agreement is governed by the law of England and Wales.</li>
+</ol>
+</div>
+
+<div class="avoid-break">
+<h2>5. Acceptance</h2>
+<p>By signing below, the parties agree to the services and commercial terms set out in this agreement.</p>
+<table class="sign">
+    <tr>
+        <td>
+            <strong>For and on behalf of {!legalName}</strong>
+            <div class="line"></div><div class="label">Signature</div>
+            <div class="line"></div><div class="label">Name and title</div>
+            <div class="line"></div><div class="label">Date</div>
+        </td>
+        <td>
+            <strong>For and on behalf of {!opp.Account.Name}</strong>
+            <div class="line"></div><div class="label">Signature</div>
+            <div class="line"></div><div class="label">Name and title</div>
+            <div class="line"></div><div class="label">Date</div>
+        </td>
+    </tr>
+</table>
+</div>
+
+</body>
+</html>
+</apex:page>

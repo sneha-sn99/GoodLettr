@@ -1,0 +1,75 @@
+<template>
+    <lightning-quick-action-panel header={header}>
+        <template lwc:if={isLoading}>
+            <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+        </template>
+        <template lwc:elseif={notHeadOffice}>
+            <div class="slds-notify slds-notify_alert slds-alert_warning" role="alert">
+                {headOffice.name} is a branch. Branches can only be added to a head office (top-level agency).
+            </div>
+        </template>
+        <template lwc:else>
+            <template lwc:if={hasBranches}>
+                <h3 class="slds-text-title_caps slds-m-bottom_x-small">Branches to add ({branches.length}) &ndash; not saved until you click Finish</h3>
+                <div class="branch-list slds-m-bottom_small">
+                    <template for:each={branchRows} for:item="b">
+                        <div key={b.key} class="branch-item slds-grid slds-grid_vertical-align-center">
+                            <div class="slds-col">
+                                <p><strong>{b.name}</strong> &middot; {b.phone}</p>
+                                <p class="slds-text-body_small">{b.contact} &lt;{b.contactEmail}&gt; &middot; {b.address}</p>
+                            </div>
+                            <div class="slds-col_bump-left">
+                                <lightning-button-icon icon-name="utility:edit" alternative-text="Edit branch" title="Edit" variant="bare"
+                                    data-index={b.index} onclick={handleEdit} class="slds-m-right_x-small"></lightning-button-icon>
+                                <lightning-button-icon icon-name="utility:delete" alternative-text="Remove branch" title="Remove" variant="bare"
+                                    data-index={b.index} onclick={handleRemove}></lightning-button-icon>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </template>
+
+            <h3 class="slds-text-heading_small slds-m-bottom_x-small">{formTitle}</h3>
+            <div class="slds-grid slds-wrap slds-gutters_x-small">
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                    <lightning-input label="Branch name" name="name" value={form.name} required
+                        placeholder={namePlaceholder} onchange={handleChange}></lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                    <lightning-input label="Branch phone" name="phone" type="tel" value={form.phone} required onchange={handleChange}></lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                    <lightning-input label="Contact first name" name="contactFirstName" value={form.contactFirstName} onchange={handleChange}></lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                    <lightning-input label="Contact last name" name="contactLastName" value={form.contactLastName} required onchange={handleChange}></lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-1">
+                    <lightning-input label="Contact email" name="contactEmail" type="email" value={form.contactEmail} required onchange={handleChange}></lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-1">
+                    <lightning-input label="Street" name="street" value={form.street} required onchange={handleChange}></lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                    <lightning-input label="City / town" name="city" value={form.city} required onchange={handleChange}></lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                    <lightning-input label="Postcode" name="postcode" value={form.postcode} required onchange={handleChange}></lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                    <lightning-input label="Country" name="country" value={form.country} onchange={handleChange}></lightning-input>
+                </div>
+            </div>
+        </template>
+        <template lwc:if={isSaving}>
+            <lightning-spinner alternative-text="Creating branches" size="small"></lightning-spinner>
+        </template>
+        <div slot="footer">
+            <lightning-button label="Cancel" onclick={handleCancel} class="slds-m-right_x-small"></lightning-button>
+            <template lwc:if={canEdit}>
+                <lightning-button label={addLabel} icon-name="utility:add" onclick={handleAddMore} disabled={isSaving} class="slds-m-right_x-small"></lightning-button>
+                <lightning-button variant="brand" label="Finish" icon-name="utility:check" onclick={handleFinish} disabled={isSaving}></lightning-button>
+            </template>
+        </div>
+    </lightning-quick-action-panel>
+</template>

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GoodLettr – Register Your Agency</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background:#f4f6f9; margin:0; padding:24px 16px; color:#1f2937; }
+    form { max-width:480px; margin:0 auto; background:#fff; padding:28px; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,.08); }
+    h1 { font-size:1.4rem; margin:0 0 20px; }
+    label { display:block; font-weight:600; font-size:.9rem; margin:14px 0 6px; }
+    input, textarea { width:100%; box-sizing:border-box; padding:10px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:1rem; font-family:inherit; }
+    textarea { min-height:110px; resize:vertical; }
+    input:focus, textarea:focus { outline:2px solid #2563eb; border-color:#2563eb; }
+    .hint { font-size:.8rem; color:#64748b; margin-top:4px; }
+    .req { color:#dc2626; }
+    button { margin-top:22px; width:100%; padding:12px; background:#2563eb; color:#fff; border:0; border-radius:6px; font-size:1rem; font-weight:600; cursor:pointer; }
+    button:hover { background:#1d4ed8; }
+  </style>
+</head>
+<body>
+
+<!--  Salesforce Web-to-Lead form for the GoodLettr org (Org ID 00Dak00001PjsDv)  -->
+<!--  Uncomment the debug lines below while testing to see the posted values.       -->
+<form action="https://webto.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8&orgId=00Dak00001PjsDv" method="POST">
+  <input type="hidden" name="oid" value="00Dak00001PjsDv">
+  <!-- Replace with the page visitors should land on after submitting -->
+  <input type="hidden" name="retURL" value="https://www.example.com/thank-you">
+  <input type="hidden" name="lead_source" value="Web">
+
+  <!--  <input type="hidden" name="debug" value="1">                              -->
+  <!--  <input type="hidden" name="debugEmail" value="snehabhatta2017@goodlettr.com"> -->
+
+  <h1>Register Your Agency</h1>
+
+  <label for="first_name">First Name <span class="req">*</span></label>
+  <input id="first_name" name="first_name" type="text" maxlength="40" required>
+
+  <label for="last_name">Last Name <span class="req">*</span></label>
+  <input id="last_name" name="last_name" type="text" maxlength="80" required>
+
+  <label for="company">Name of the Agency <span class="req">*</span></label>
+  <input id="company" name="company" type="text" maxlength="255" required>
+
+  <label for="email">Email <span class="req">*</span></label>
+  <input id="email" name="email" type="email" maxlength="80" required>
+
+  <label for="phone">Phone Number <span class="req">*</span></label>
+  <input id="phone" name="phone" type="tel" maxlength="40" required>
+
+  <!-- Number_of_Branches__c -->
+  <label for="00Nak00005ftxwX">Number of Branches</label>
+  <input id="00Nak00005ftxwX" name="00Nak00005ftxwX" type="number" min="0" max="999" step="1">
+
+  <!-- Number_of_Tenancies__c -->
+  <label for="00Nak00005fseb1">Number of Tenancies</label>
+  <input id="00Nak00005fseb1" name="00Nak00005fseb1" type="number" min="0" max="9999999999" step="1">
+
+  <!-- Enquiry_Notes__c (Text Area, 255) -->
+  <label for="00Nak00005fzeso">Enquiry Details <span class="req">*</span></label>
+  <textarea id="00Nak00005fzeso" name="00Nak00005fzeso" maxlength="255" wrap="soft" required
+            placeholder="Tell us what you're looking for, e.g. current software, go-live date, questions"></textarea>
+  <div class="hint">Up to 255 characters.</div>
+
+  <button type="submit">Submit</button>
+</form>
+
+</body>
+</html>

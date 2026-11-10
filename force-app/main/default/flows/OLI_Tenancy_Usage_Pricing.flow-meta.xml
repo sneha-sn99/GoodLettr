@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>68.0</apiVersion>
+    <areMetricsLoggedToDataCloud>false</areMetricsLoggedToDataCloud>
+    <assignments>
+        <description>Insert: set Total Price and leave Sales Price blank. Salesforce derives Sales Price = Total / Quantity.</description>
+        <name>Price_New_Line</name>
+        <label>Price New Line</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <assignmentItems>
+            <assignToReference>$Record.Billing_Frequency__c</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>fEffectiveFrequency</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>$Record.Quantity</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>fQuantity</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>$Record.UnitPrice</assignToReference>
+            <operator>Assign</operator>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>$Record.TotalPrice</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>fTotalPrice</elementReference>
+            </value>
+        </assignmentItems>
+    </assignments>
+    <assignments>
+        <description>Any other update (Quantity / Billing Frequency): set Total Price only. Salesforce derives Sales Price = Total / Quantity.</description>
+        <name>Recalculate_Total</name>
+        <label>Recalculate Total</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <assignmentItems>
+            <assignToReference>$Record.Billing_Frequency__c</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>fEffectiveFrequency</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>$Record.TotalPrice</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>fTotalPrice</elementReference>
+            </value>
+        </assignmentItems>
+    </assignments>
+    <assignments>
+        <description>Update where the Sales Price was edited: reset it to the calculated net value (discounts go in Discount %). Salesforce recalculates Total = Quantity x Sales Price.</description>
+        <name>Reset_Sales_Price</name>
+        <label>Reset Sales Price</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <assignmentItems>
+            <assignToReference>$Record.Billing_Frequency__c</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>fEffectiveFrequency</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>$Record.UnitPrice</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>fNetUnitPricePerPeriod</elementReference>
+            </value>
+        </assignmentItems>
+    </assignments>
+    <decisions>
+        <name>Is_Tenancy_Management_Software</name>
+        <label>Is Tenancy Management Software?</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <defaultConnectorLabel>Other product</defaultConnectorLabel>
+        <rules>
+            <name>Tenancy_Product</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.PricebookEntry.Product2.ProductCode</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>TMS-USG-MTH</stringValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Which_Change</targetReference>
+            </connector>
+            <label>Tenancy Product</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Which_Change</name>
+        <label>Which Change?</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <defaultConnector>
+            <targetReference>Recalculate_Total</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>Other Update</defaultConnectorLabel>
+        <rules>
+            <name>New_Line</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>fIsNew</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Price_New_Line</targetReference>
+            </connector>
+            <label>New Line</label>
+        </rules>
+        <rules>
+            <name>Sales_Price_Edited</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>fUnitPriceChanged</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Reset_Sales_Price</targetReference>
+            </connector>
+            <label>Sales Price Edited</label>
+        </rules>
+    </decisions>
+    <description>Before-save on Opportunity Product (create and update). For Tenancy Management Software (TMS-USG-MTH), a recurring usage charge:
+- Quantity = Opportunity.Number of Tenancies when the line is created (kept as entered afterwards)
+- Billing Frequency defaults from the Product (otherwise Monthly)
+- Sales Price = list price per tenant per month x months in the billing period (Monthly 1, Quarterly 3, Annual 12)
+- Discount % (optional) reduces the price: Total = Quantity x period price x (1 - Discount %); Sales Price shows the net price per tenant per period, List Price the undiscounted monthly rate
+- Total Price = Quantity x Sales Price
+Salesforce does not allow Sales Price and Total Price to be changed in the same save, so the flow sets only one of them, depending on the case.</description>
+    <formulas>
+        <description>Line frequency if set, otherwise the Product&apos;s, otherwise Monthly.</description>
+        <name>fEffectiveFrequency</name>
+        <dataType>String</dataType>
+        <expression>IF(NOT(ISBLANK(TEXT({!$Record.Billing_Frequency__c}))), TEXT({!$Record.Billing_Frequency__c}), IF(NOT(ISBLANK(TEXT({!$Record.PricebookEntry.Product2.Billing_Frequency__c}))), TEXT({!$Record.PricebookEntry.Product2.Billing_Frequency__c}), &quot;Monthly&quot;))</expression>
+    </formulas>
+    <formulas>
+        <name>fIsNew</name>
+        <dataType>Boolean</dataType>
+        <expression>ISNEW()</expression>
+    </formulas>
+    <formulas>
+        <name>fMonthsPerPeriod</name>
+        <dataType>Number</dataType>
+        <expression>CASE({!fEffectiveFrequency}, &quot;Quarterly&quot;, 3, &quot;Annual&quot;, 12, 1)</expression>
+        <scale>0</scale>
+    </formulas>
+    <formulas>
+        <description>Price per tenant for one billing period after the rep&apos;s Discount %. In flows a Percent field holds 10% as 10, hence / 100.</description>
+        <name>fNetUnitPricePerPeriod</name>
+        <dataType>Currency</dataType>
+        <expression>{!fUnitPricePerPeriod} * (1 - BLANKVALUE({!$Record.Discount_Percent__c}, 0) / 100)</expression>
+        <scale>2</scale>
+    </formulas>
+    <formulas>
+        <description>On create, use the Opportunity&apos;s Number of Tenancies (if filled); afterwards keep the line&apos;s Quantity.</description>
+        <name>fQuantity</name>
+        <dataType>Number</dataType>
+        <expression>IF(AND(ISNEW(), NOT(ISBLANK({!$Record.Opportunity.Number_of_Tenancies__c}))), {!$Record.Opportunity.Number_of_Tenancies__c}, {!$Record.Quantity})</expression>
+        <scale>2</scale>
+    </formulas>
+    <formulas>
+        <description>Recurring charge for one billing period: tenancies x price per tenant per period.</description>
+        <name>fTotalPrice</name>
+        <dataType>Currency</dataType>
+        <expression>{!fQuantity} * {!fNetUnitPricePerPeriod}</expression>
+        <scale>2</scale>
+    </formulas>
+    <formulas>
+        <name>fUnitPriceChanged</name>
+        <dataType>Boolean</dataType>
+        <expression>ISCHANGED({!$Record.UnitPrice})</expression>
+    </formulas>
+    <formulas>
+        <description>Price per tenant for one billing period.</description>
+        <name>fUnitPricePerPeriod</name>
+        <dataType>Currency</dataType>
+        <expression>{!$Record.PricebookEntry.UnitPrice} * {!fMonthsPerPeriod}</expression>
+        <scale>2</scale>
+    </formulas>
+    <interviewLabel>OLI Tenancy Usage Pricing {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>OLI Tenancy Usage Pricing</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Is_Tenancy_Management_Software</targetReference>
+        </connector>
+        <object>OpportunityLineItem</object>
+        <recordTriggerType>CreateAndUpdate</recordTriggerType>
+        <triggerType>RecordBeforeSave</triggerType>
+    </start>
+    <status>Active</status>
+</Flow>

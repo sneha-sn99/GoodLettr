@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Score_Once_Per_Category__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description>Only the highest-scoring matching rule in this Category counts.</description>
+    <fieldManageability>SubscriberControlled</fieldManageability>
+    <label>Score Once per Category</label>
+    <type>Checkbox</type>
+</CustomField>

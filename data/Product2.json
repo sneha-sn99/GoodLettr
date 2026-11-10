@@ -1,0 +1,18 @@
+{
+    "records": [
+        {
+            "attributes": {
+                "type": "Product2",
+                "referenceId": "Product2Ref1"
+            },
+            "Name": "Tenancy Management Software",
+            "ProductCode": "TMS-USG-MTH",
+            "Description": "Usage-based subscription. Billed monthly at a price per tenant: Quantity = number of tenants managed by the agency in the billing month.",
+            "Family": "Software",
+            "IsActive": true,
+            "QuantityUnitOfMeasure": "Tenant",
+            "Billing_Frequency__c": "Monthly",
+            "Charge_Type__c": "Usage"
+        }
+    ]
+}
