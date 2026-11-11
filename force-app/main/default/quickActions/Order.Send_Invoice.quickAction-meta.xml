@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<QuickAction xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionSubtype>ScreenAction</actionSubtype>
+    <description>Email the invoice PDF to the Order&apos;s bill-to contact, save it to Files and move the Order to Billed (until a billing system is integrated).</description>
+    <label>Send Invoice</label>
+    <lightningWebComponent>goodlettrSendInvoice</lightningWebComponent>
+    <optionsCreateFeedItem>false</optionsCreateFeedItem>
+    <type>LightningWebComponent</type>
+</QuickAction>

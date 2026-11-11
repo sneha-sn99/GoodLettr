@@ -1,0 +1,11 @@
+.branch-list {
+    max-height: 12rem;
+    overflow-y: auto;
+}
+.branch-item {
+    border: 1px solid #dddbda;
+    border-radius: 0.25rem;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.5rem;
+    background: #f3f6fb;
+}

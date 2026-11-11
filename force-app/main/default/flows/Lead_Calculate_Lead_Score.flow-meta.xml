@@ -1,0 +1,435 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <description>Flow formulas cannot reference line-break characters, so line breaks and tabs are replaced with spaces in Apex before phrase matching.</description>
+        <name>Remove_Line_Breaks</name>
+        <label>Remove Line Breaks</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <actionName>GoodLettrTextCleaner</actionName>
+        <actionType>apex</actionType>
+        <connector>
+            <targetReference>Get_Active_Rules</targetReference>
+        </connector>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>conversationNotes</name>
+            <value>
+                <elementReference>$Record.Conversation_Notes__c</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>enquiryNotes</name>
+            <value>
+                <elementReference>$Record.Enquiry_Notes__c</elementReference>
+            </value>
+        </inputParameters>
+        <nameSegment>GoodLettrTextCleaner</nameSegment>
+        <outputParameters>
+            <assignToReference>vConversation</assignToReference>
+            <name>conversationNotes</name>
+        </outputParameters>
+        <outputParameters>
+            <assignToReference>vEnquiry</assignToReference>
+            <name>enquiryNotes</name>
+        </outputParameters>
+    </actionCalls>
+    <apiVersion>68.0</apiVersion>
+    <areMetricsLoggedToDataCloud>false</areMetricsLoggedToDataCloud>
+    <assignments>
+        <name>Add_Points</name>
+        <label>Add Points</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <assignmentItems>
+            <assignToReference>vScore</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>fRulePoints</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>vReasons</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>fReasonsNew</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>vMatchedCategories</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>fCategoryToken</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Loop_Rules</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Mark_Disqualified</name>
+        <label>Mark Disqualified</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <assignmentItems>
+            <assignToReference>vDisqualified</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <booleanValue>true</booleanValue>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>vDisqualifyReason</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>fDisqualifyReason</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Loop_Rules</targetReference>
+        </connector>
+    </assignments>
+    <decisions>
+        <name>Rule_Matches</name>
+        <label>Rule Matches?</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <defaultConnector>
+            <targetReference>Loop_Rules</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>No match</defaultConnectorLabel>
+        <rules>
+            <name>Disqualifying_Match</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>fMatched</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>fIsDisqualifyRule</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Mark_Disqualified</targetReference>
+            </connector>
+            <label>Disqualifying Match</label>
+        </rules>
+        <rules>
+            <name>Scoring_Match</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>fCounts</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>fIsDisqualifyRule</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Add_Points</targetReference>
+            </connector>
+            <label>Scoring Match</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Score_Changed</name>
+        <label>Score Changed?</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <defaultConnectorLabel>No change</defaultConnectorLabel>
+        <rules>
+            <name>Changed</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>fScoreChanged</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Update_Lead_Score</targetReference>
+            </connector>
+            <label>Changed</label>
+        </rules>
+    </decisions>
+    <description>After-save on Lead (create and update). Notes are cleaned by the Remove Line Breaks Apex action, then scored; Lead Score and Reason are updated only when they change (which also stops the update re-triggering the flow). Calculates Lead Score (0-100) and Lead Score Reason from the active Lead Score Rule custom metadata records:
+- Phrase rules match whole words (case-insensitive, punctuation ignored) in Enquiry Notes and/or Conversation Notes; a phrase directly preceded by not/no/dont/never/isnt/arent/wont/without is ignored
+- Matches in Conversation Notes are weighted x1.5
+- Rules run highest points first; with Score Once per Category only the best match in a category counts
+- Tenancies At Least / Branches At Least / Email Domain / Phone Provided rules use the Lead&apos;s fields
+- A Disqualify rule sets the score to 0
+Field history is tracked on Lead Score and Lead Score Reason.</description>
+    <formulas>
+        <description>Category already scored by a higher-points rule (rules are processed highest points first).</description>
+        <name>fAlreadyScored</name>
+        <dataType>Boolean</dataType>
+        <expression>AND({!Loop_Rules.Score_Once_Per_Category__c}, CONTAINS({!vMatchedCategories}, &quot;|&quot; &amp; {!Loop_Rules.Category__c} &amp; &quot;|&quot;))</expression>
+    </formulas>
+    <formulas>
+        <name>fAppliesTo</name>
+        <dataType>String</dataType>
+        <expression>TEXT({!Loop_Rules.Applies_To__c})</expression>
+    </formulas>
+    <formulas>
+        <name>fCategoryToken</name>
+        <dataType>String</dataType>
+        <expression>{!Loop_Rules.Category__c} &amp; &quot;|&quot;</expression>
+    </formulas>
+    <formulas>
+        <description>Conversation Notes, normalised the same way.</description>
+        <name>fConversationNorm</name>
+        <dataType>String</dataType>
+        <expression>&quot; &quot; &amp; SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(LOWER(BLANKVALUE({!vConversation}, &quot;&quot;)), &quot;&apos;&quot;, &quot;&quot;), &quot;’&quot;, &quot;&quot;), &quot;.&quot;, &quot; &quot;), &quot;,&quot;, &quot; &quot;), &quot;!&quot;, &quot; &quot;), &quot;?&quot;, &quot; &quot;), &quot;;&quot;, &quot; &quot;), &quot;:&quot;, &quot; &quot;), &quot;(&quot;, &quot; &quot;), &quot;)&quot;, &quot; &quot;), &quot;\&quot;&quot;, &quot; &quot;), &quot;/&quot;, &quot; &quot;), &quot;-&quot;, &quot; &quot;), &quot;&amp;&quot;, &quot; &quot;), &quot;  &quot;, &quot; &quot;), &quot;  &quot;, &quot; &quot;), &quot;  &quot;, &quot; &quot;) &amp; &quot; &quot;</expression>
+    </formulas>
+    <formulas>
+        <name>fCounts</name>
+        <dataType>Boolean</dataType>
+        <expression>AND({!fMatched}, NOT({!fAlreadyScored}))</expression>
+    </formulas>
+    <formulas>
+        <name>fDisqualifyReason</name>
+        <dataType>String</dataType>
+        <expression>&quot;Disqualified: &quot; &amp; {!Loop_Rules.MasterLabel} &amp; IF({!fFromCall}, &quot; (call)&quot;, &quot;&quot;)</expression>
+    </formulas>
+    <formulas>
+        <description>Enquiry Notes, lower-cased, punctuation removed, padded with spaces for whole-word matching.</description>
+        <name>fEnquiryNorm</name>
+        <dataType>String</dataType>
+        <expression>&quot; &quot; &amp; SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(LOWER(BLANKVALUE({!vEnquiry}, &quot;&quot;)), &quot;&apos;&quot;, &quot;&quot;), &quot;’&quot;, &quot;&quot;), &quot;.&quot;, &quot; &quot;), &quot;,&quot;, &quot; &quot;), &quot;!&quot;, &quot; &quot;), &quot;?&quot;, &quot; &quot;), &quot;;&quot;, &quot; &quot;), &quot;:&quot;, &quot; &quot;), &quot;(&quot;, &quot; &quot;), &quot;)&quot;, &quot; &quot;), &quot;\&quot;&quot;, &quot; &quot;), &quot;/&quot;, &quot; &quot;), &quot;-&quot;, &quot; &quot;), &quot;&amp;&quot;, &quot; &quot;), &quot;  &quot;, &quot; &quot;), &quot;  &quot;, &quot; &quot;), &quot;  &quot;, &quot; &quot;) &amp; &quot; &quot;</expression>
+    </formulas>
+    <formulas>
+        <description>Text(255) so field history shows it.</description>
+        <name>fFinalReason</name>
+        <dataType>String</dataType>
+        <expression>LEFT(IF({!vDisqualified}, {!vDisqualifyReason}, IF(ISBLANK({!vReasons}), &quot;No scoring signals found&quot;, &quot;Score &quot; &amp; TEXT({!fFinalScore}) &amp; &quot;: &quot; &amp; {!vReasons})), 255)</expression>
+    </formulas>
+    <formulas>
+        <description>Clamped to 0-100; 0 when disqualified.</description>
+        <name>fFinalScore</name>
+        <dataType>Number</dataType>
+        <expression>IF({!vDisqualified}, 0, MAX(0, MIN(100, {!vScore})))</expression>
+        <scale>0</scale>
+    </formulas>
+    <formulas>
+        <name>fFromCall</name>
+        <dataType>Boolean</dataType>
+        <expression>AND({!fRuleType} = &quot;Phrase&quot;, {!fInConversation})</expression>
+    </formulas>
+    <formulas>
+        <description>Phrase found in Conversation Notes and not negated.</description>
+        <name>fInConversation</name>
+        <dataType>Boolean</dataType>
+        <expression>AND({!fAppliesTo} &lt;&gt; &quot;Enquiry Notes&quot;, LEN(TRIM(BLANKVALUE({!Loop_Rules.Phrase__c}, &quot;&quot;))) &gt; 0, CONTAINS({!fConversationNorm}, {!fPhrase}), NOT(OR(CONTAINS({!fConversationNorm}, &quot; not&quot; &amp; {!fPhrase}), CONTAINS({!fConversationNorm}, &quot; no&quot; &amp; {!fPhrase}), CONTAINS({!fConversationNorm}, &quot; dont&quot; &amp; {!fPhrase}), CONTAINS({!fConversationNorm}, &quot; never&quot; &amp; {!fPhrase}), CONTAINS({!fConversationNorm}, &quot; isnt&quot; &amp; {!fPhrase}), CONTAINS({!fConversationNorm}, &quot; arent&quot; &amp; {!fPhrase}), CONTAINS({!fConversationNorm}, &quot; wont&quot; &amp; {!fPhrase}), CONTAINS({!fConversationNorm}, &quot; without&quot; &amp; {!fPhrase}))))</expression>
+    </formulas>
+    <formulas>
+        <description>Phrase found in Enquiry Notes and not negated (e.g. &quot;not ready to switch&quot;).</description>
+        <name>fInEnquiry</name>
+        <dataType>Boolean</dataType>
+        <expression>AND({!fAppliesTo} &lt;&gt; &quot;Conversation Notes&quot;, LEN(TRIM(BLANKVALUE({!Loop_Rules.Phrase__c}, &quot;&quot;))) &gt; 0, CONTAINS({!fEnquiryNorm}, {!fPhrase}), NOT(OR(CONTAINS({!fEnquiryNorm}, &quot; not&quot; &amp; {!fPhrase}), CONTAINS({!fEnquiryNorm}, &quot; no&quot; &amp; {!fPhrase}), CONTAINS({!fEnquiryNorm}, &quot; dont&quot; &amp; {!fPhrase}), CONTAINS({!fEnquiryNorm}, &quot; never&quot; &amp; {!fPhrase}), CONTAINS({!fEnquiryNorm}, &quot; isnt&quot; &amp; {!fPhrase}), CONTAINS({!fEnquiryNorm}, &quot; arent&quot; &amp; {!fPhrase}), CONTAINS({!fEnquiryNorm}, &quot; wont&quot; &amp; {!fPhrase}), CONTAINS({!fEnquiryNorm}, &quot; without&quot; &amp; {!fPhrase}))))</expression>
+    </formulas>
+    <formulas>
+        <name>fIsDisqualifyRule</name>
+        <dataType>Boolean</dataType>
+        <expression>{!Loop_Rules.Disqualify__c}</expression>
+    </formulas>
+    <formulas>
+        <name>fMatched</name>
+        <dataType>Boolean</dataType>
+        <expression>IF({!fRuleType} = &quot;Phrase&quot;, OR({!fInEnquiry}, {!fInConversation}), IF({!fRuleType} = &quot;Tenancies At Least&quot;, AND(NOT(ISBLANK({!$Record.Number_of_Tenancies__c})), {!$Record.Number_of_Tenancies__c} &gt;= BLANKVALUE({!Loop_Rules.Threshold__c}, 0)), IF({!fRuleType} = &quot;Branches At Least&quot;, AND(NOT(ISBLANK({!$Record.Number_of_Branches__c})), {!$Record.Number_of_Branches__c} &gt;= BLANKVALUE({!Loop_Rules.Threshold__c}, 0)), IF({!fRuleType} = &quot;Email Domain&quot;, AND(LEN(TRIM(BLANKVALUE({!Loop_Rules.Phrase__c}, &quot;&quot;))) &gt; 0, CONTAINS(LOWER(BLANKVALUE({!$Record.Email}, &quot;&quot;)), &quot;@&quot; &amp; LOWER(TRIM({!Loop_Rules.Phrase__c})))), IF({!fRuleType} = &quot;Phone Provided&quot;, NOT(ISBLANK({!$Record.Phone})), false)))))</expression>
+    </formulas>
+    <formulas>
+        <name>fPhrase</name>
+        <dataType>String</dataType>
+        <expression>&quot; &quot; &amp; LOWER(TRIM(BLANKVALUE({!Loop_Rules.Phrase__c}, &quot;&quot;))) &amp; &quot; &quot;</expression>
+    </formulas>
+    <formulas>
+        <name>fReasonPart</name>
+        <dataType>String</dataType>
+        <expression>IF({!fRulePoints} &gt;= 0, &quot;+&quot;, &quot;&quot;) &amp; TEXT({!fRulePoints}) &amp; &quot; &quot; &amp; {!Loop_Rules.MasterLabel} &amp; IF({!fFromCall}, &quot; (call)&quot;, &quot;&quot;)</expression>
+    </formulas>
+    <formulas>
+        <name>fReasonsNew</name>
+        <dataType>String</dataType>
+        <expression>IF(ISBLANK({!vReasons}), {!fReasonPart}, {!vReasons} &amp; &quot;; &quot; &amp; {!fReasonPart})</expression>
+    </formulas>
+    <formulas>
+        <description>Conversation Notes matches are weighted x1.5 (rep-confirmed).</description>
+        <name>fRulePoints</name>
+        <dataType>Number</dataType>
+        <expression>IF({!fFromCall}, ROUND(BLANKVALUE({!Loop_Rules.Points__c}, 0) * 1.5, 0), BLANKVALUE({!Loop_Rules.Points__c}, 0))</expression>
+        <scale>0</scale>
+    </formulas>
+    <formulas>
+        <name>fRuleType</name>
+        <dataType>String</dataType>
+        <expression>TEXT({!Loop_Rules.Rule_Type__c})</expression>
+    </formulas>
+    <formulas>
+        <description>Only update when the score or reason actually changes.</description>
+        <name>fScoreChanged</name>
+        <dataType>Boolean</dataType>
+        <expression>OR(BLANKVALUE({!$Record.Lead_Score__c}, -1) &lt;&gt; {!fFinalScore}, BLANKVALUE({!$Record.Lead_Score_Reason__c}, &quot;&quot;) &lt;&gt; {!fFinalReason})</expression>
+    </formulas>
+    <interviewLabel>Lead - Calculate Lead Score {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Lead - Calculate Lead Score</label>
+    <loops>
+        <name>Loop_Rules</name>
+        <label>Loop Rules</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <collectionReference>Get_Active_Rules</collectionReference>
+        <iterationOrder>Asc</iterationOrder>
+        <nextValueConnector>
+            <targetReference>Rule_Matches</targetReference>
+        </nextValueConnector>
+        <noMoreValuesConnector>
+            <targetReference>Score_Changed</targetReference>
+        </noMoreValuesConnector>
+    </loops>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <recordLookups>
+        <name>Get_Active_Rules</name>
+        <label>Get Active Rules</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector>
+            <targetReference>Loop_Rules</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Active__c</field>
+            <operator>EqualTo</operator>
+            <value>
+                <booleanValue>true</booleanValue>
+            </value>
+        </filters>
+        <getFirstRecordOnly>false</getFirstRecordOnly>
+        <object>Lead_Score_Rule__mdt</object>
+        <sortField>Points__c</sortField>
+        <sortOrder>Desc</sortOrder>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordLookups>
+    <recordUpdates>
+        <name>Update_Lead_Score</name>
+        <label>Update Lead Score</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Id</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </filters>
+        <inputAssignments>
+            <field>Lead_Score_Reason__c</field>
+            <value>
+                <elementReference>fFinalReason</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Lead_Score__c</field>
+            <value>
+                <elementReference>fFinalScore</elementReference>
+            </value>
+        </inputAssignments>
+        <object>Lead</object>
+    </recordUpdates>
+    <start>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Remove_Line_Breaks</targetReference>
+        </connector>
+        <object>Lead</object>
+        <recordTriggerType>CreateAndUpdate</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+    <variables>
+        <name>vConversation</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>vDisqualified</name>
+        <dataType>Boolean</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <value>
+            <booleanValue>false</booleanValue>
+        </value>
+    </variables>
+    <variables>
+        <name>vDisqualifyReason</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>vEnquiry</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>vMatchedCategories</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <value>
+            <stringValue>|</stringValue>
+        </value>
+    </variables>
+    <variables>
+        <name>vReasons</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>vScore</name>
+        <dataType>Number</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <scale>0</scale>
+        <value>
+            <numberValue>0.0</numberValue>
+        </value>
+    </variables>
+</Flow>

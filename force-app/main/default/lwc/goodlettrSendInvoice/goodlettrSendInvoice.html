@@ -1,0 +1,43 @@
+<template>
+    <lightning-quick-action-panel header="Send Invoice">
+        <template lwc:if={isLoading}>
+            <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+        </template>
+        <template lwc:elseif={loadError}>
+            <div class="slds-text-color_error">{loadError}</div>
+        </template>
+        <template lwc:else>
+            <template lwc:if={blockedReason}>
+                <div class="slds-notify slds-notify_alert slds-alert_warning slds-m-bottom_small" role="alert">{blockedReason}</div>
+            </template>
+            <dl class="slds-list_horizontal slds-wrap slds-m-bottom_small">
+                <dt class="slds-item_label slds-text-color_weak">Invoice</dt>
+                <dd class="slds-item_detail">{ctx.invoiceNumber}</dd>
+                <dt class="slds-item_label slds-text-color_weak">Bill to</dt>
+                <dd class="slds-item_detail">{billTo}</dd>
+                <dt class="slds-item_label slds-text-color_weak">Amount</dt>
+                <dd class="slds-item_detail">
+                    <lightning-formatted-number value={ctx.amount} format-style="currency" currency-code="GBP"></lightning-formatted-number>
+                </dd>
+                <dt class="slds-item_label slds-text-color_weak">Due</dt>
+                <dd class="slds-item_detail"><lightning-formatted-date-time value={ctx.dueDate} day="numeric" month="long" year="numeric" time-zone="UTC"></lightning-formatted-date-time></dd>
+            </dl>
+            <template lwc:if={ctx.canSend}>
+                <lightning-input label="CC" value={cc} placeholder="Optional, separate addresses with commas" onchange={handleCc}></lightning-input>
+                <lightning-input label="Subject" required value={subject} onchange={handleSubject} class="slds-m-top_x-small"></lightning-input>
+                <lightning-textarea label="Message" value={body} onchange={handleBody} class="slds-m-top_x-small body"></lightning-textarea>
+                <div class="slds-m-top_small slds-text-body_small">
+                    The invoice PDF is attached and saved to this Order's Files, and the Order moves to <strong>Billed</strong>.
+                    <a href={pdfUrl} target="_blank" class="slds-m-left_x-small">Preview invoice</a>
+                </div>
+            </template>
+        </template>
+        <template lwc:if={isSending}>
+            <lightning-spinner alternative-text="Sending" size="small"></lightning-spinner>
+        </template>
+        <div slot="footer">
+            <lightning-button label="Cancel" onclick={handleClose} class="slds-m-right_x-small"></lightning-button>
+            <lightning-button variant="brand" label="Send Invoice" icon-name="utility:send" onclick={handleSend} disabled={sendDisabled}></lightning-button>
+        </div>
+    </lightning-quick-action-panel>
+</template>

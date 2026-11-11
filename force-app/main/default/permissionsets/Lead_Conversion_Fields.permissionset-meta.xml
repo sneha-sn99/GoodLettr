@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Access to agency sizing fields carried over on lead conversion.</description>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Account.Number_of_Branches__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Opportunity.Number_of_Tenancies__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <hasActivationRequired>false</hasActivationRequired>
+    <label>Lead Conversion Fields</label>
+</PermissionSet>

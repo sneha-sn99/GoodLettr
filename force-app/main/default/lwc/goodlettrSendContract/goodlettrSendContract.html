@@ -1,0 +1,65 @@
+<template>
+    <lightning-quick-action-panel header="Send Contract Email">
+        <template lwc:if={isLoading}>
+            <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+        </template>
+        <template lwc:elseif={loadError}>
+            <div class="slds-text-color_error">{loadError}</div>
+        </template>
+        <template lwc:else>
+            <template lwc:if={noRecipients}>
+                <div class="slds-notify slds-notify_alert slds-alert_warning slds-m-bottom_small" role="alert">
+                    No contact with an email address was found for this agency. Add a contact to the Account
+                    (or as an Opportunity contact role) and try again.
+                </div>
+            </template>
+            <template lwc:if={noLines}>
+                <div class="slds-notify slds-notify_alert slds-alert_warning slds-m-bottom_small" role="alert">
+                    This Opportunity has no products, so the contract's schedule of charges will be empty.
+                </div>
+            </template>
+            <lightning-combobox
+                label="To (agency contact)"
+                required
+                options={recipientOptions}
+                value={contactId}
+                placeholder="Choose a contact"
+                onchange={handleContact}
+            ></lightning-combobox>
+            <lightning-input
+                label="CC"
+                type="text"
+                value={cc}
+                placeholder="Optional, separate addresses with commas"
+                onchange={handleCc}
+                class="slds-m-top_x-small"
+            ></lightning-input>
+            <lightning-input
+                label="Subject"
+                required
+                value={subject}
+                onchange={handleSubject}
+                class="slds-m-top_x-small"
+            ></lightning-input>
+            <lightning-textarea
+                label="Message"
+                value={body}
+                onchange={handleBody}
+                class="slds-m-top_x-small body"
+            ></lightning-textarea>
+            <div class="slds-m-top_small slds-text-body_small">
+                <lightning-icon icon-name="doctype:pdf" size="x-small" class="slds-m-right_x-small"></lightning-icon>
+                The contract PDF is generated now and attached. After the email is sent, a copy is saved to this
+                Opportunity's Files and the email is logged in its activity history.
+                <a href={pdfUrl} target="_blank" class="slds-m-left_x-small">Preview contract</a>
+            </div>
+        </template>
+        <template lwc:if={isSending}>
+            <lightning-spinner alternative-text="Sending" size="small"></lightning-spinner>
+        </template>
+        <div slot="footer">
+            <lightning-button label="Cancel" onclick={handleClose} class="slds-m-right_x-small"></lightning-button>
+            <lightning-button variant="brand" label="Send" icon-name="utility:send" onclick={handleSend} disabled={sendDisabled}></lightning-button>
+        </div>
+    </lightning-quick-action-panel>
+</template>

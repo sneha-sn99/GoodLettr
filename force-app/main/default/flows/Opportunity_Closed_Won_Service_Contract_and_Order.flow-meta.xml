@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <name>Create_Service_Contract_and_Order</name>
+        <label>Create Service Contract and Order</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <actionName>GoodLettrClosedWonService</actionName>
+        <actionType>apex</actionType>
+        <connector>
+            <targetReference>Activate_Agency</targetReference>
+        </connector>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>opportunityId</name>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </inputParameters>
+        <nameSegment>GoodLettrClosedWonService</nameSegment>
+    </actionCalls>
+    <apiVersion>68.0</apiVersion>
+    <areMetricsLoggedToDataCloud>false</areMetricsLoggedToDataCloud>
+    <decisions>
+        <name>Is_Branch_Of_Head_Office</name>
+        <label>Is Branch of a Head Office?</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <defaultConnectorLabel>No parent</defaultConnectorLabel>
+        <rules>
+            <name>Has_Head_Office</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.Account.ParentId</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Activate_Top_Account</targetReference>
+            </connector>
+            <label>Has Head Office</label>
+        </rules>
+    </decisions>
+    <description>After-save on Opportunity. When a rep moves the Opportunity to Closed Won (signed contract received), creates a Service Contract with contract lines and a Draft Order with order products, copied from the Opportunity Products (Apex action GoodLettrClosedWonService). Then sets the agency&apos;s Status to Active and, for a branch deal, its top (head office) account to Active too.</description>
+    <interviewLabel>Opportunity Closed Won - Service Contract and Order {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Opportunity Closed Won - Service Contract and Order</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <recordUpdates>
+        <description>The agency on the won deal becomes Active (from Draft or Inactive).</description>
+        <name>Activate_Agency</name>
+        <label>Activate Agency</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Is_Branch_Of_Head_Office</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Id</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>$Record.AccountId</elementReference>
+            </value>
+        </filters>
+        <filters>
+            <field>Account_Status__c</field>
+            <operator>NotEqualTo</operator>
+            <value>
+                <stringValue>Active</stringValue>
+            </value>
+        </filters>
+        <inputAssignments>
+            <field>Account_Status__c</field>
+            <value>
+                <stringValue>Active</stringValue>
+            </value>
+        </inputAssignments>
+        <object>Account</object>
+    </recordUpdates>
+    <recordUpdates>
+        <description>A branch win also makes its top (head office) account Active, whatever its current status.</description>
+        <name>Activate_Top_Account</name>
+        <label>Activate Top Account</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Id</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>$Record.Account.ParentId</elementReference>
+            </value>
+        </filters>
+        <filters>
+            <field>Account_Status__c</field>
+            <operator>NotEqualTo</operator>
+            <value>
+                <stringValue>Active</stringValue>
+            </value>
+        </filters>
+        <inputAssignments>
+            <field>Account_Status__c</field>
+            <value>
+                <stringValue>Active</stringValue>
+            </value>
+        </inputAssignments>
+        <object>Account</object>
+    </recordUpdates>
+    <start>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Create_Service_Contract_and_Order</targetReference>
+        </connector>
+        <doesRequireRecordChangedToMeetCriteria>true</doesRequireRecordChangedToMeetCriteria>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>StageName</field>
+            <operator>EqualTo</operator>
+            <value>
+                <stringValue>Closed Won</stringValue>
+            </value>
+        </filters>
+        <object>Opportunity</object>
+        <recordTriggerType>Update</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+</Flow>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Branch_Email__c</fullName>
+    <description>Branch / agency email address (captured by the Add Branches flow).</description>
+    <externalId>false</externalId>
+    <label>Branch Email</label>
+    <required>false</required>
+    <trackFeedHistory>false</trackFeedHistory>
+    <type>Email</type>
+    <unique>false</unique>
+</CustomField>

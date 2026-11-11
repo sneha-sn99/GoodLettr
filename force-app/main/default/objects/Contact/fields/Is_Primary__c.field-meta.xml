@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Is_Primary__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description>Primary contact for the agency group (top account and its branches). Only one per group. Set with the Make Primary action; the first contact on a top-level account is made primary automatically.</description>
+    <label>Is Primary</label>
+    <trackFeedHistory>false</trackFeedHistory>
+    <type>Checkbox</type>
+</CustomField>

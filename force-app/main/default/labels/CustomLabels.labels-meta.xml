@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomLabels xmlns="http://soap.sforce.com/2006/04/metadata">
+    <labels>
+        <fullName>GoodLettr_Legal_Name</fullName>
+        <categories>GoodLettr Contract</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>GoodLettr legal entity name (contract PDF)</shortDescription>
+        <value>GoodLettr</value>
+    </labels>
+    <labels>
+        <fullName>GoodLettr_Registered_Address</fullName>
+        <categories>GoodLettr Contract</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>GoodLettr registered address (contract PDF)</shortDescription>
+        <value>[Registered address - update Custom Label GoodLettr_Registered_Address]</value>
+    </labels>
+    <labels>
+        <fullName>GoodLettr_Company_Number</fullName>
+        <categories>GoodLettr Contract</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>GoodLettr company registration number (contract PDF)</shortDescription>
+        <value>[Company number - update Custom Label GoodLettr_Company_Number]</value>
+    </labels>
+</CustomLabels>

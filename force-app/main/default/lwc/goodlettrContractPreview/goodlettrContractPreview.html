@@ -1,0 +1,21 @@
+<template>
+    <lightning-quick-action-panel header="Generate Contract PDF">
+        <div class="preview">
+            <template lwc:if={pdfUrl}>
+                <iframe src={pdfUrl} title="GoodLettr contract preview" class="pdf-frame"></iframe>
+            </template>
+        </div>
+        <p class="slds-text-body_small slds-text-color_weak slds-m-top_x-small">
+            This is a preview. Save it to the Opportunity's Files, or use Send Contract Email to send it to the agency
+            (the sent copy is saved to Files automatically).
+        </p>
+        <template lwc:if={isSaving}>
+            <lightning-spinner alternative-text="Saving contract" size="small"></lightning-spinner>
+        </template>
+        <div slot="footer">
+            <lightning-button label="Close" onclick={handleClose} class="slds-m-right_x-small"></lightning-button>
+            <lightning-button label="Open in New Tab" onclick={handleOpen} class="slds-m-right_x-small"></lightning-button>
+            <lightning-button variant="brand" label="Save to Files" onclick={handleSave} disabled={isSaving}></lightning-button>
+        </div>
+    </lightning-quick-action-panel>
+</template>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Read access to Lead Score and Lead Score Reason (calculated by the Lead - Calculate Lead Score flow).</description>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>Lead.Lead_Score_Reason__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>Lead.Lead_Score__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <hasActivationRequired>false</hasActivationRequired>
+    <label>Lead Scoring</label>
+</PermissionSet>
