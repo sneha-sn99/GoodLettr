@@ -402,3 +402,11 @@ Outcome (deployed to GoodLettr):
 - Test updated (moved to top, 0 contacts left on the branch, then reported as already primary). All 22 GoodLettr tests pass.
 - Live test: Sophie@Leeds → primary and moved to the HQ, Daniel unchecked, HQ Primary Contact = Sophie, 0 contacts left on the branch. Test records deleted.
 - Note: existing Opportunity contact roles, Orders (Bill To) and Service Contracts that reference the contact are unaffected by the move.
+
+## 38. Commit the code base, prompt log and Web-to-Lead form to GitHub
+
+> commit all changes , code base and including your prompt log and the goodlettr-web-to-lead.html file to "https://github.com/sneha-sn99/GoodLettr.git"branch
+
+Outcome:
+- Pushed the full project to the `GoodLettr` branch of https://github.com/sneha-sn99/GoodLettr.git: Salesforce source (`force-app`), `manifest/goodlettr-package.xml` (validated: 305/305 components, 22/22 tests), `web-to-lead/goodlettr-web-to-lead.html`, `prompts/session-prompts.md`, `docs/`, `data/` (Tenancy Management Software product) and `scripts/`.
+- The README edited directly on GitHub was kept; the project commit was placed on top of it.
